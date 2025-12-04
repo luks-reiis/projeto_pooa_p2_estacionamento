@@ -21,15 +21,22 @@ router.post('/', upload.single('foto'), async (req, res) => {
   }
 });
 
-// READ all
+// READ veiculos livres
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM veiculo ORDER BY id DESC');
+    const livres = req.query.livres;
+    let sql = 'SELECT * FROM veiculo';
+    const params = [];
+    if (livres === '1' || livres === 'true') {
+      sql += ' WHERE estacionado = 0';
+    }
+    const [rows] = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Erro ao buscar veículos' });
   }
 });
+
 
 // READ one
 router.get('/:id', async (req, res) => {
@@ -60,6 +67,7 @@ router.delete('/:id', async (req, res) => {
     await pool.query('DELETE FROM veiculo WHERE id=?', [req.params.id]);
     res.json({ message: 'Veículo removido' });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ message: 'Erro ao remover veículo' });
   }
 });

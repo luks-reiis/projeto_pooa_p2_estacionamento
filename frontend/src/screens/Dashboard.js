@@ -17,8 +17,10 @@ export default function Dashboard({ navigation }) {
   };
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', loadStatus);
+    return unsubscribe;
+  }, [navigation]);
+
 
   const onRefresh = async () => {
     setRefreshing(true);

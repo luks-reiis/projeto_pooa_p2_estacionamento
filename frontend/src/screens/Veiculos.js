@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Image, FlatList } from 'react-native';
-import { List, Button, Avatar } from 'react-native-paper';
+import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import { List, Button, Avatar, IconButton } from 'react-native-paper';
 import api from '../services/api';
 
 export default function Veiculos({ navigation }) {
@@ -20,8 +20,27 @@ export default function Veiculos({ navigation }) {
     return unsub;
   }, [navigation]);
 
+  const excluir = async (id) => {
+    Alert.alert('Confirmação', 'Deseja realmente excluir esse veículo?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/veiculos/${id}`);
+            carregar();
+          } catch (err) {
+            console.log(err);
+            Alert.alert('Erro', 'Não foi possível excluir');
+          }
+        },
+      },
+    ]);
+  };
+
   const renderItem = ({ item }) => {
-    const fotoUri = item.foto ? `http://10.0.2.2:3001/uploads/${item.foto}` : null;
+    const fotoUri = item.foto ? `http://192.168.15.9:3001/uploads/${item.foto}` : null;
     return (
       <List.Item
         title={`ID ${item.id} - ${item.placa}`}
@@ -29,6 +48,12 @@ export default function Veiculos({ navigation }) {
         left={props =>
           fotoUri ? <Avatar.Image size={48} source={{ uri: fotoUri }} /> : <Avatar.Icon size={48} icon="car" />
         }
+        right={props => (
+          <>
+            <IconButton icon="pencil" onPress={() => navigation.navigate('DetalheCarro', { id: item.id })} />
+            <IconButton icon="delete" onPress={() => excluir(item.id)} />
+          </>
+        )}
       />
     );
   };
@@ -47,6 +72,4 @@ export default function Veiculos({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, flex: 1 },
-});
+const styles = StyleSheet.create({ container: { padding: 20, flex: 1 } });

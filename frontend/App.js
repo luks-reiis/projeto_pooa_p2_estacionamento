@@ -8,6 +8,7 @@ import Veiculos from './src/screens/Veiculos';
 import CadastrarVeiculo from './src/screens/CadastrarVeiculo';
 import Vagas from './src/screens/Vagas';
 import DetalheVaga from './src/screens/DetalheVaga';
+import DetalheCarro from "./src/screens/DetalheCarro";
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ export default function App() {
           <Stack.Screen name="DetalheVaga" component={DetalheVaga} />
           <Stack.Screen name="Veiculos" component={Veiculos} />
           <Stack.Screen name="CadastrarVeiculo" component={CadastrarVeiculo} />
+          <Stack.Screen name="DetalheCarro" component={DetalheCarro} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

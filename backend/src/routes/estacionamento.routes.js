@@ -71,6 +71,11 @@ router.post('/entrada-vaga', async (req, res) => {
       [veiculoId, vagaId]
     );
 
+    await connection.query(
+      'UPDATE veiculo SET estacionado = 1 WHERE id = ?',
+      [veiculoId]
+    );
+
     await connection.query('UPDATE vaga SET ocupada = 1 WHERE id = ?', [vagaId]);
 
     await connection.commit();
@@ -117,6 +122,9 @@ router.post('/saida', async (req, res) => {
     await connection.query('UPDATE movimentacao SET hora_saida = NOW(), valor = ?, ativo = 0 WHERE id = ?', [valor || 0, movimentacaoId]);
     await connection.query('UPDATE vaga SET ocupada = 0 WHERE id = ?', [mov.vaga_id]);
 
+    // mov contém a movimentacao encontrada
+    await connection.query('UPDATE veiculo SET estacionado = 0 WHERE id = ?', [mov.veiculo_id]);
+
     await connection.commit();
     connection.release();
 
@@ -128,5 +136,25 @@ router.post('/saida', async (req, res) => {
     res.status(500).json({ message: 'Erro ao registrar saída' });
   }
 });
+
+router.get('/info-veiculo-vaga/:vagaId', async (req, res) => {
+  try {
+    const { vagaId } = req.params;
+    const [rows] = await pool.query(`
+      SELECT v.*
+      FROM movimentacao m
+      JOIN veiculo v ON v.id = m.veiculo_id
+      WHERE m.vaga_id = ? AND m.ativo = 1
+      LIMIT 1
+    `, [vagaId]);
+
+    if (!rows.length) return res.status(404).json({ message: 'Nenhum veículo ativo nessa vaga' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Erro ao buscar info do veículo' });
+  }
+});
+
 
 module.exports = router;

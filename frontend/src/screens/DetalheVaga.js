@@ -1,25 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, Image } from 'react-native';
 import { Text, Button, RadioButton } from 'react-native-paper';
 import api from '../services/api';
 
 export default function DetalheVaga({ route, navigation }) {
-  const { vaga } = route.params; // objeto vaga inteiro
+  const { vaga } = route.params;
   const [veiculos, setVeiculos] = useState([]);
   const [selecionado, setSelecionado] = useState('');
-
-  const carregarVeiculos = async () => {
-    try {
-      const { data } = await api.get('/veiculos');
-      setVeiculos(data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const [veiculoOcupante, setVeiculoOcupante] = useState(null);
 
   useEffect(() => {
-    if (!vaga.ocupada) carregarVeiculos();
+    if (vaga.ocupada) {
+      fetchVeiculoOcupante();
+    } else {
+      fetchVeiculosLivres();
+    }
   }, []);
+
+  const fetchVeiculosLivres = async () => {
+    try {
+      const { data } = await api.get('/veiculos?livres=1');
+      setVeiculos(data);
+    } catch (err) { console.log(err); }
+  };
+
+  const fetchVeiculoOcupante = async () => {
+    try {
+      const { data } = await api.get(`/estacionamento/info-veiculo-vaga/${vaga.id}`);
+      setVeiculoOcupante(data);
+    } catch (err) { console.log(err); }
+  };
 
   const estacionar = async () => {
     if (!selecionado) { Alert.alert('Escolha um veículo'); return; }
@@ -50,7 +60,24 @@ export default function DetalheVaga({ route, navigation }) {
       <Text variant="headlineSmall">Vaga {vaga.numero}</Text>
       <Text>Status: {vaga.ocupada ? 'Ocupada' : 'Livre'}</Text>
 
-      {!vaga.ocupada ? (
+      {vaga.ocupada ? (
+        <>
+          {veiculoOcupante ? (
+            <>
+              {veiculoOcupante.foto && (
+                <Image source={{ uri: `http://192.168.15.9:3001/uploads/${veiculoOcupante.foto}` }} style={{ width: 180, height: 120, marginVertical: 10 }} />
+              )}
+              <Text>Placa: {veiculoOcupante.placa}</Text>
+              <Text>Modelo: {veiculoOcupante.modelo}</Text>
+              <Text>Proprietário: {veiculoOcupante.proprietario}</Text>
+            </>
+          ) : (
+            <Text>Carregando info do veículo...</Text>
+          )}
+
+          <Button mode="contained" onPress={liberar} style={{ marginTop: 12 }}>Liberar Vaga</Button>
+        </>
+      ) : (
         <>
           <Text style={{ marginTop: 12 }}>Escolha o veículo para estacionar:</Text>
           <RadioButton.Group onValueChange={v => setSelecionado(v)} value={selecionado}>
@@ -58,15 +85,12 @@ export default function DetalheVaga({ route, navigation }) {
               <RadioButton.Item key={v.id} label={`ID ${v.id} - ${v.placa}`} value={String(v.id)} />
             ))}
           </RadioButton.Group>
+
           <Button mode="contained" onPress={estacionar}>Estacionar</Button>
         </>
-      ) : (
-        <Button mode="contained" onPress={liberar}>Liberar Vaga</Button>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20 },
-});
+const styles = StyleSheet.create({ container: { padding: 20 } });
